@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">NewsAppUdacity</string>
+    <string name="no_news">Nothing found</string>
+    <string name="no_internet">No Internet</string>
+</resources>
