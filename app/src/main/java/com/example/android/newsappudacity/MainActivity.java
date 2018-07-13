@@ -3,11 +3,15 @@ package com.example.android.newsappudacity;
 import android.app.LoaderManager;
 import android.content.Intent;
 import android.content.Loader;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
@@ -19,36 +23,10 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<List<NewsClass>> {
     private static final int NEWS_LOADER_ID = 1;
-    public static final String LOG_TAG = MainActivity.class.getName();
-    private static final String GUARDIAN_REQUEST_URL = "https://content.guardianapis.com/search?show-tags=contributor&q='snowboarding'&api-key=9ac27e16-ff04-4553-ae14-bf5fc2eeed79";
+    private static final String GUARDIAN_REQUEST_URL = "https://content.guardianapis.com/search?show-tags=contributor";
     private TextView mEmptyView;
     private ProgressBar mProgressBar;
     private AdapterListView newsAdapter;
-
-    @Override
-    public Loader<List<NewsClass>> onCreateLoader(int i, Bundle bundle) {
-        return new NewsLoader(this, GUARDIAN_REQUEST_URL);
-    }
-
-    @Override
-    public void onLoadFinished(Loader<List<NewsClass>> loader, List<NewsClass> newsGuardian) {
-        // Clear the adapter of previous earthquake data
-        newsAdapter.clear();
-        mEmptyView.setText(R.string.no_news);
-        mProgressBar.setVisibility(View.GONE);
-
-        // If there is a valid list of {@link Earthquake}s, then add them to the adapter's
-        // data set. This will trigger the ListView to update.
-        if (newsGuardian != null && !newsGuardian.isEmpty()) {
-            newsAdapter.addAll(newsGuardian);
-        }
-    }
-
-    @Override
-    public void onLoaderReset(Loader<List<NewsClass>> loader) {
-        // Loader reset, so we can clear out our existing data.
-        newsAdapter.clear();
-    }
 
 
     @Override
@@ -76,11 +54,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
         if (activeNetwork != null && activeNetwork.isConnected()) {
-            ;
-            // Initialize the loader. Pass in the int ID constant defined above and pass in null for
-            // the bundle. Pass in this activity for the LoaderCallbacks parameter (which is valid
-            // because this activity implements the LoaderCallbacks interface).
-            // Get a reference to the LoaderManager, in order to interact with loaders.
             LoaderManager loaderManager = getLoaderManager();
             loaderManager.initLoader(NEWS_LOADER_ID, null, this);
         } else {
@@ -89,5 +62,56 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             mProgressBar.setVisibility(View.GONE);
             mEmptyView.setText(R.string.no_internet);
         }
+    }
+
+    @Override
+    public Loader<List<NewsClass>> onCreateLoader(int i, Bundle bundle) {
+        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+        String searchWord = sharedPrefs.getString(
+                getString(R.string.settings_search_key),
+                getString(R.string.settings_search_default));
+        Uri baseUri = Uri.parse(GUARDIAN_REQUEST_URL);
+        Uri.Builder uriBuilder = baseUri.buildUpon();
+        uriBuilder.appendQueryParameter("order-by", "newest");
+        uriBuilder.appendQueryParameter("q", searchWord);
+        uriBuilder.appendQueryParameter("api-key", "9ac27e16-ff04-4553-ae14-bf5fc2eeed79");
+        return new NewsLoader(this, uriBuilder.toString());
+    }
+
+    @Override
+    public void onLoadFinished(Loader<List<NewsClass>> loader, List<NewsClass> newsGuardian) {
+        // Clear the adapter of previous earthquake data
+        newsAdapter.clear();
+        mEmptyView.setText(R.string.no_news);
+        mProgressBar.setVisibility(View.GONE);
+
+        // If there is a valid list of {@link Earthquake}s, then add them to the adapter's
+        // data set. This will trigger the ListView to update.
+        if (newsGuardian != null && !newsGuardian.isEmpty()) {
+            newsAdapter.addAll(newsGuardian);
+        }
+    }
+
+    @Override
+    public void onLoaderReset(Loader<List<NewsClass>> loader) {
+        // Loader reset, so we can clear out our existing data.
+        newsAdapter.clear();
+    }
+
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu, menu);
+        return true;
+    }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.action_settings) {
+            Intent settingsIntent = new Intent(this, SettingsActivity.class);
+            startActivity(settingsIntent);
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 }
