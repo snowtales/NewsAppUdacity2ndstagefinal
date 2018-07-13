@@ -70,9 +70,14 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         String searchWord = sharedPrefs.getString(
                 getString(R.string.settings_search_key),
                 getString(R.string.settings_search_default));
+
+        String orderBy  = sharedPrefs.getString(
+                getString(R.string.settings_order_by_key),
+                getString(R.string.settings_order_by_default)
+        );
         Uri baseUri = Uri.parse(GUARDIAN_REQUEST_URL);
         Uri.Builder uriBuilder = baseUri.buildUpon();
-        uriBuilder.appendQueryParameter("order-by", "newest");
+        uriBuilder.appendQueryParameter("order-by", orderBy);
         uriBuilder.appendQueryParameter("q", searchWord);
         uriBuilder.appendQueryParameter("api-key", "9ac27e16-ff04-4553-ae14-bf5fc2eeed79");
         return new NewsLoader(this, uriBuilder.toString());
